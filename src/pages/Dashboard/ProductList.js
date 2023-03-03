@@ -1,31 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  getProducts,
-  removeProduct,
-  toggleDeleteSuccess,
-} from '../../feature/products/productsSlice';
+  useGetProductsQuery,
+  useRemoveProductMutation,
+} from '../../feature/api/apiSlice';
+// import {
+//   getProducts,
+//   removeProduct,
+//   toggleDeleteSuccess,
+// } from '../../feature/products/productsSlice';
 const ProductList = () => {
-  const { products, isLoading, deleteSuccess } = useSelector(
-    (state) => state.product
-  );
-  const dispatch = useDispatch();
+  const [products, setProducts] = useState([]);
+  const { data, isLoading, status } = useGetProductsQuery(null, {
+    refetchOnMountOrArgChange: true,
+  });
+  useEffect(() => {
+    setProducts(data?.data);
+  }, [status]);
+
+  const [removeProduct, { isSuccess }] = useRemoveProductMutation();
 
   useEffect(() => {
-    dispatch(getProducts());
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && deleteSuccess) {
+    if (isSuccess) {
       toast.success('Successfully Removed...');
-      dispatch(toggleDeleteSuccess());
     }
-  }, [isLoading, deleteSuccess]);
+  }, [isSuccess]);
 
-  // if (isLoading) {
-  //   return <p>Loading...</p>;
-  // }
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="flex flex-col justify-center items-center h-full w-full ">
@@ -58,7 +62,7 @@ const ProductList = () => {
             </thead>
 
             <tbody className="text-sm divide-y divide-gray-100">
-              {products.map(({ model, brand, price, status, _id }) => (
+              {products?.map(({ model, brand, price, status, _id }) => (
                 <tr>
                   <td className="p-2">
                     <input type="checkbox" className="w-5 h-5" value="id-1" />
@@ -85,7 +89,11 @@ const ProductList = () => {
                   </td>
                   <td className="p-2">
                     <div className="flex justify-center">
-                      <button onClick={() => dispatch(removeProduct(_id))}>
+                      <button
+                        onClick={() => {
+                          removeProduct(_id);
+                        }}
+                      >
                         <svg
                           className="w-8 h-8 hover:text-blue-600 rounded-full hover:bg-gray-100 p-1"
                           fill="none"
